@@ -2,7 +2,7 @@
 1. Install `Postgresql` into your system.
 2. Create a database named `guggleweed` and run the following script in that database
 ```sql
-create database users(username varchar(32) primary key, password varchar(256) not null);
+create table users(username varchar(32) primary key, password varchar(256) not null);
 ```
 3. Clone this repository.
 4. In `/lib/database.ts`, configure the connection pool by your `Postgresql` settings:
