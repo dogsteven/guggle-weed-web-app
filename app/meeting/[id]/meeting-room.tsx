@@ -7,6 +7,7 @@ import ChatBox from "./chat-box";
 import VideoConference from "./video-conference";
 import { toast } from "@/components/ui/use-toast";
 import { useAppStore } from "./app-store-provider";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 
 type MeetingRoomProps = {
   username: string,
@@ -75,14 +76,20 @@ export default function MeetingRoom({ username, meetingId }: MeetingRoomProps) {
   }
 
   return (
-    <>
-      <Card className="flex flex-col w-full h-full p-6">
-        <VideoConference />
-      </Card>
+    <ResizablePanelGroup direction="horizontal" className="flex flex-row gap-2">
+      <ResizablePanel>
+        <Card className="flex flex-col w-full h-full p-6 gap-2">
+          <VideoConference />
+        </Card>
+      </ResizablePanel>
 
-      <Card className="flex flex-col w-[32rem] h-full p-6">
-        <ChatBox />
-      </Card>
-    </>
+      <ResizableHandle className="z-0" />
+
+      <ResizablePanel maxSize={30} defaultSize={25} minSize={20}>
+        <Card className="flex flex-col h-full p-6">
+          <ChatBox />
+        </Card>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   )
 }

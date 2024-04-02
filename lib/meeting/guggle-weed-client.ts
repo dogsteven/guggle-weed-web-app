@@ -61,6 +61,10 @@ export default class GuggleWeedClient {
       store.getState().onSocketDisconnected();
     });
 
+    this.socket.on("meetingEnded", () => {
+      this.dispose();
+    });
+
     this.socket.on("messageSent", (chatMessage) => {
       store.getState().onChatMessageReceived(chatMessage);
     });
@@ -136,6 +140,10 @@ export default class GuggleWeedClient {
 
     for (const event of events) {
       this.socket.off(event);
+    }
+
+    for (const [_, producer] of Array.from(this.producers.entries())) {
+      producer.close();
     }
 
     this.socket.disconnect();
