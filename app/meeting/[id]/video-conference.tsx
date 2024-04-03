@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
-import { AvatarIcon, CameraIcon, DesktopIcon, HamburgerMenuIcon, HandIcon, ReaderIcon, RocketIcon, SpeakerLoudIcon, ViewGridIcon } from "@radix-ui/react-icons";
+import { AvatarIcon, CameraIcon, DesktopIcon, EnterFullScreenIcon, HamburgerMenuIcon, HandIcon, ReaderIcon, RocketIcon, SpeakerLoudIcon, ViewGridIcon } from "@radix-ui/react-icons";
 import { PopoverContent } from "@radix-ui/react-popover";
 import { useAppStore } from "./app-store-provider";
 import { useMemo, useState } from "react";
@@ -80,6 +80,8 @@ export default function VideoConference({ hostId, username }: { hostId: string, 
     return medias;
   }, [video, screenVideo]);
 
+  const [allowAttentionRequest, setAllowAttentionRequest] = useState(true);
+
   return (
     <TooltipProvider>
       <div className="hidden">
@@ -100,11 +102,23 @@ export default function VideoConference({ hostId, username }: { hostId: string, 
                 <div className="relative h-full w-full">
                   <Video id={`remote-${id}`} key={`video-${id}`} stream={stream} className="absolute h-full w-full object-cover rounded-xl" />
 
-                  <div className="absolute h-full w-full flex flex-row justify-start items-end p-2">
+                  <div className="absolute h-full w-full flex flex-row justify-between items-end p-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" className="rounded-full">
+                          {username.charAt(0).toUpperCase()}
+                        </Button>
+                      </TooltipTrigger>
+
+                      <TooltipContent>
+                        {username}
+                      </TooltipContent>
+                    </Tooltip>
+
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          size="icon" className="rounded-full"
+                          variant="ghost" size="icon" className="rounded-full"
                           onClick={() => {
                             const videoElement = document.getElementById(`remote-${id}`) as HTMLVideoElement;
 
@@ -113,12 +127,12 @@ export default function VideoConference({ hostId, username }: { hostId: string, 
                             });
                           }}
                         >
-                          {username.charAt(0).toUpperCase()}
+                          <EnterFullScreenIcon />
                         </Button>
                       </TooltipTrigger>
 
                       <TooltipContent>
-                        {username}
+                        Enter full screen
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -136,21 +150,19 @@ export default function VideoConference({ hostId, username }: { hostId: string, 
               <SheetTrigger asChild>
                 <Button
                   size="icon"
-                  className="rounded-full"
+                  className="relative rounded-full"
                 >
                   <ReaderIcon />
+
+                  {
+                    (attentionRequests.length > 0) && (
+                      <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs leading-none text-red-100 transform translate-x-1/3 -translate-y-1/3 bg-red-600 rounded-full">{ attentionRequests.length }</span>
+                    )
+                  }
                 </Button>
               </SheetTrigger>
 
-              <SheetContent
-                onOpenAutoFocus={(event) => {
-                  event.preventDefault();
-                  // @ts-ignore
-                  event.target.focus();
-                }}
-
-                className="overflow-y-scroll"
-              >
+              <SheetContent className="overflow-y-scroll">
                 <SheetHeader>
                   <SheetTitle>Attention requests</SheetTitle>
                 </SheetHeader>
@@ -188,8 +200,17 @@ export default function VideoConference({ hostId, username }: { hostId: string, 
           size="icon"
           className="rounded-full"
           
+          disabled={!allowAttentionRequest}
+
           onClick={() => {
-            requestAttention();
+            if (allowAttentionRequest) {
+              requestAttention();
+
+              setAllowAttentionRequest(false);
+              setTimeout(() => {
+                setAllowAttentionRequest(true);
+              }, 5000);
+            }
           }}
         >
           <HandIcon />
