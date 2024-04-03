@@ -50,7 +50,7 @@ export default async function Page({ params }: { params: { id: string } }) {
     <MeetingRoomLayout username={username} hostId={hostId} meetingId={params.id}>
       <main className="w-full h-[calc(100vh_-_theme(spacing.16))] flex flex-row justify-center items-center bg-muted/40 p-4 gap-4">
         <AppStoreProvider username={username} meetingId={params.id}>
-          <MeetingRoom username={username} meetingId={params.id} />
+          <MeetingRoom username={username} hostId={hostId} meetingId={params.id} />
         </AppStoreProvider>
       </main>
     </MeetingRoomLayout>

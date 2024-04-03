@@ -11,12 +11,13 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 
 type MeetingRoomProps = {
   username: string,
+  hostId: string,
   meetingId: string
 }
 
 type ConnectionState = "initializing" | "initialization_error" | "ready" | "joining" | "joined" | "disconnected";
 
-export default function MeetingRoom({ username, meetingId }: MeetingRoomProps) {
+export default function MeetingRoom({ username, hostId, meetingId }: MeetingRoomProps) {
   const connectionState = useAppStore((state) => state.connectionState);
 
   const meetingStatus = useAppStore((state) => state.meetingStatus);
@@ -79,7 +80,7 @@ export default function MeetingRoom({ username, meetingId }: MeetingRoomProps) {
     <ResizablePanelGroup direction="horizontal" className="flex flex-row gap-2">
       <ResizablePanel>
         <Card className="flex flex-col w-full h-full p-6 gap-2">
-          <VideoConference />
+          <VideoConference hostId={hostId} username={username} />
         </Card>
       </ResizablePanel>
 

@@ -66,7 +66,37 @@ export default class GuggleWeedClient {
     });
 
     this.socket.on("messageSent", (chatMessage) => {
-      store.getState().onChatMessageReceived(chatMessage);
+      if (store.getState().meetingStatus === "live") {
+        store.getState().onChatMessageReceived(chatMessage);
+      }
+    });
+
+    this.socket.on("attentionRequested", ({ attendeeId }) => {
+      if (store.getState().meetingStatus === "live") {
+        store.getState().onAttentionRequested(attendeeId);
+      }
+    });
+
+    this.socket.on("attentionAccepted", ({ attendeeId }) => {
+      if (store.getState().meetingStatus === "live") {
+        toast({
+          title: "Attention",
+          description: `Please pay your attention on ${attendeeId}`
+        });
+
+        store.getState().onAttentionAccepted(attendeeId);
+      }
+    });
+
+    this.socket.on("attendeeJoined", ({ attendeeId }) => {
+      if (store.getState().meetingStatus === "live") {
+        if (attendeeId !== this.username) {
+          toast({
+            title: "Attendee joined",
+            description: `Attendee ${attendeeId} has just joined this meeting`
+          });
+        }
+      }
     });
 
     this.socket.on("attendeeDisconnected", ({ attendeeId }) => {
@@ -97,24 +127,28 @@ export default class GuggleWeedClient {
     });
 
     this.socket.on("producerCreated", async ({ attendeeId, producerId }) => {
-      try {
-        await store.getState().consumeMedia(attendeeId, producerId);
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.message
-        });
+      if (store.getState().meetingStatus === "live") {
+        try {
+          await store.getState().consumeMedia(attendeeId, producerId);
+        } catch (error: any) {
+          toast({
+            title: "Error",
+            description: error.message
+          });
+        }
       }
     });
 
     this.socket.on("consumerClosed", ({ consumerId }) => {
-      try {
-        store.getState().onConsumerClosed(consumerId);
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.message
-        });
+      if (store.getState().meetingStatus === "live") {
+        try {
+          store.getState().onConsumerClosed(consumerId);
+        } catch (error: any) {
+          toast({
+            title: "Error",
+            description: error.message
+          });
+        }
       }
     });
 
@@ -128,6 +162,8 @@ export default class GuggleWeedClient {
       "connect", "connect_error", "disconnect",
 
       "messageSent",
+
+      "attentionRequested", "attentionAccepted",
 
       "meetingEnded",
 
@@ -163,6 +199,14 @@ export default class GuggleWeedClient {
 
   public sendChatMessage(message: string) {
     this.socket.emit("sendMessage", { message });
+  }
+
+  public requestAttention() {
+    this.socket.emit("requestAttention");
+  }
+
+  public acceptAttention(attendeeId: string) {
+    this.socket.emit("acceptAttention", { attendeeId });
   }
 
   public async join() {

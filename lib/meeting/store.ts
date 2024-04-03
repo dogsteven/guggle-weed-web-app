@@ -22,6 +22,8 @@ type AppState = {
     chatMessages: ChatMessage[]
   }
 
+  attentionRequests: string[]
+
   selfStream: {
     video: MediaStream | null
     screenVideo: MediaStream | null
@@ -48,6 +50,12 @@ type AppAction = {
   enterMessage: (message: string) => void
   sendChatMessage: () => void
   onChatMessageReceived: (chatMessage: ChatMessage) => void
+
+  requestAttention: () => void
+  onAttentionRequested: (attendeeId: string) => void
+  acceptAttention: (attendeeId: string) => void
+  rejectAttention: (attendeeId: string) => void
+  onAttentionAccepted: (attendeeId: string) => void
 
   joinMeeting: () => Promise<void>
   
@@ -76,6 +84,8 @@ export default function buildAppStore(client: GuggleWeedClient): StoreApi<AppSto
       message: "",
       chatMessages: []
     },
+
+    attentionRequests: [],
     
     selfStream: {
       video: null,
@@ -122,6 +132,61 @@ export default function buildAppStore(client: GuggleWeedClient): StoreApi<AppSto
         draft.chatMessages.push(chatMessage);
       })
     })),
+
+    requestAttention: () => {
+      client.requestAttention();
+    },
+
+    onAttentionRequested: (attendeeId) => set((state) => ({
+      attentionRequests: produce(state.attentionRequests, (draft) => {
+        const index = draft.findIndex((username) => username === attendeeId);
+
+        if (index === -1) {
+          draft.push(attendeeId);
+        } else {
+          draft.splice(index, 1);
+          draft.splice(0, 0, attendeeId);
+        }
+      })
+    })),
+
+    acceptAttention: (attendeeId) => {
+      client.acceptAttention(attendeeId);
+      
+      set((state) => ({
+        attentionRequests: produce(state.attentionRequests, (draft) => {
+          const index = draft.findIndex((username) => username === attendeeId);
+
+          if (index !== -1) {
+            draft.splice(index, 1);
+          }
+        })
+      }));
+    },
+
+    rejectAttention: (attendeeId) => {
+      set((state) => ({
+        attentionRequests: produce(state.attentionRequests, (draft) => {
+          const index = draft.findIndex((username) => username === attendeeId);
+
+          if (index !== -1) {
+            draft.splice(index, 1);
+          }
+        })
+      }));
+    },
+
+    onAttentionAccepted: (attendeeId) => {
+      let draft = Array.from(get().otherMedias);
+
+      const medias = draft.filter(({ kind, username }) => kind === "video" && username === attendeeId);
+
+      draft = [...medias, ...draft.filter(({ kind, username }) => !(kind === "video" && username === attendeeId))];
+
+      set(() => ({
+        otherMedias: draft
+      }));
+    },
 
     joinMeeting: async () => {
       set({ connectionState: "joining" });

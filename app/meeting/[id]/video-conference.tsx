@@ -1,18 +1,21 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
-import { AvatarIcon, CameraIcon, DesktopIcon, HamburgerMenuIcon, SpeakerLoudIcon, ViewGridIcon } from "@radix-ui/react-icons";
+import { AvatarIcon, CameraIcon, DesktopIcon, HamburgerMenuIcon, HandIcon, ReaderIcon, RocketIcon, SpeakerLoudIcon, ViewGridIcon } from "@radix-ui/react-icons";
 import { PopoverContent } from "@radix-ui/react-popover";
 import { useAppStore } from "./app-store-provider";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 
-function Video({ stream, className }: { stream: MediaStream, className?: string }) {
+function Video({ id, stream, className }: { id: string, stream: MediaStream, className?: string }) {
   return (
-    <video className={className} 
+    <video id={id} className={className} 
       ref={(ref) => {
         if (ref) {
           ref.srcObject = stream;
@@ -39,9 +42,14 @@ function Audio({ stream }: { stream: MediaStream }) {
   )
 }
 
-export default function VideoConference() {
+export default function VideoConference({ hostId, username }: { hostId: string, username: string }) {
   const { video, screenVideo, isSharingVideo, isSharingAudio, isSharingScreenVideo } = useAppStore((state) => state.selfStream);
   const otherMedias = useAppStore((state) => state.otherMedias);
+  const attentionRequests = useAppStore((state) => state.attentionRequests);
+
+  const requestAttention = useAppStore((state) => state.requestAttention);
+  const acceptAttention = useAppStore((state) => state.acceptAttention);
+  const rejectAttention = useAppStore((state) => state.rejectAttention);
 
   const openVideo = useAppStore((state) => state.openVideo);
   const openAudio = useAppStore((state) => state.openAudio);
@@ -73,7 +81,7 @@ export default function VideoConference() {
   }, [video, screenVideo]);
 
   return (
-    <>
+    <TooltipProvider>
       <div className="hidden">
         {
           audios.map(({ id, stream }) => {
@@ -84,12 +92,37 @@ export default function VideoConference() {
         }
       </div>
 
-      <div className="grid grid-cols-3 grid-rows-3 flex-grow gap-2 items-center overflow-y-auto">
+      <div className="grid grid-cols-3 grid-rows-3 flex-grow gap-4 items-center overflow-y-auto">
         {
           visibleVideos.map(({ id, username, stream }) => {
             return (
-              <Card key={`video-${id}`} className="h-full w-full flex flex-row p-4 gap-2 justify-center items-center">
-                <Video key={`video-${id}`} stream={stream} className="h-full w-full object-fit" />
+              <Card key={`video-${id}`} className="h-full w-full">
+                <div className="relative h-full w-full">
+                  <Video id={`remote-${id}`} key={`video-${id}`} stream={stream} className="absolute h-full w-full object-cover rounded-xl" />
+
+                  <div className="absolute h-full w-full flex flex-row justify-start items-end p-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon" className="rounded-full"
+                          onClick={() => {
+                            const videoElement = document.getElementById(`remote-${id}`) as HTMLVideoElement;
+
+                            videoElement.requestFullscreen({
+                              navigationUI: "show"
+                            });
+                          }}
+                        >
+                          {username.charAt(0).toUpperCase()}
+                        </Button>
+                      </TooltipTrigger>
+
+                      <TooltipContent>
+                        {username}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
               </Card>
             );
           })
@@ -97,6 +130,71 @@ export default function VideoConference() {
       </div>
       
       <div className="flex flex-row flex-shrink w-full justify-end items-center gap-4">
+        {
+          (username === hostId) && (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  size="icon"
+                  className="rounded-full"
+                >
+                  <ReaderIcon />
+                </Button>
+              </SheetTrigger>
+
+              <SheetContent
+                onOpenAutoFocus={(event) => {
+                  event.preventDefault();
+                  // @ts-ignore
+                  event.target.focus();
+                }}
+
+                className="overflow-y-scroll"
+              >
+                <SheetHeader>
+                  <SheetTitle>Attention requests</SheetTitle>
+                </SheetHeader>
+
+                <div className="flex flex-col w-full gap-2 mt-6">
+                  {
+                    attentionRequests.map((attendeeId) => {
+                      return (
+                        <ContextMenu key={attendeeId}>
+                          <ContextMenuTrigger>
+                            <Alert>
+                              <RocketIcon className="h-4 w-4" />
+                              <AlertTitle>Request</AlertTitle>
+                              <AlertDescription>
+                                {attendeeId} has request for an attention
+                              </AlertDescription>
+                            </Alert>
+                          </ContextMenuTrigger>
+
+                          <ContextMenuContent>
+                            <ContextMenuItem onClick={() => acceptAttention(attendeeId)}>Accept</ContextMenuItem>
+                            <ContextMenuItem onClick={() => rejectAttention(attendeeId)}>Reject</ContextMenuItem>
+                          </ContextMenuContent>
+                        </ContextMenu>
+                      );
+                    })
+                  }
+                </div>
+              </SheetContent>
+            </Sheet>
+          )
+        }
+
+        <Button
+          size="icon"
+          className="rounded-full"
+          
+          onClick={() => {
+            requestAttention();
+          }}
+        >
+          <HandIcon />
+        </Button>
+
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -107,14 +205,14 @@ export default function VideoConference() {
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent side="top" className="z-10">
+          <PopoverContent side="top" className="z-50">
             <Card className="flex flex-row gap-2 p-2">
               { (selfMedias.length === 0) && "There is nothing to display" }
 
               {
                 selfMedias.map(({ key, stream }) => {
                   return (
-                    <Video key={key} stream={stream} className="w-96" />
+                    <Video id={`local-${key}`} key={key} stream={stream} className="w-96" />
                   );
                 })
               }
@@ -122,127 +220,125 @@ export default function VideoConference() {
           </PopoverContent>
         </Popover>
 
-        <TooltipProvider>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                size="icon"
-                className="rounded-full"
-              >
-                <HamburgerMenuIcon />
-              </Button>
-            </PopoverTrigger>
-
-            <PopoverContent
-              side="top"
-              onOpenAutoFocus={(event) => {
-                event.preventDefault();
-                // @ts-ignore
-                event.target.focus();
-              }}
-
-              className="z-10"
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              size="icon"
+              className="rounded-full"
             >
-              <Card className="flex flex-row gap-2 p-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      className="rounded-full"
+              <HamburgerMenuIcon />
+            </Button>
+          </PopoverTrigger>
 
-                      variant={ isSharingVideo ? "default" : "secondary" }
+          <PopoverContent
+            side="top"
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              // @ts-ignore
+              event.target.focus();
+            }}
 
-                      onClick={async () => {
-                        try {
-                          if (!isSharingVideo) {
-                            await openVideo();
-                          } else {
-                            await closeVideo();
-                          }
-                        } catch (error: any) {
-                          console.error(error);
-                          toast({
-                            title: "Error",
-                            description: error.message
-                          });
+            className="z-50"
+          >
+            <Card className="flex flex-row gap-2 p-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    className="rounded-full"
+
+                    variant={ isSharingVideo ? "default" : "secondary" }
+
+                    onClick={async () => {
+                      try {
+                        if (!isSharingVideo) {
+                          await openVideo();
+                        } else {
+                          await closeVideo();
                         }
-                      }}
-                    >
-                      <CameraIcon />
-                    </Button>
-                  </TooltipTrigger>
+                      } catch (error: any) {
+                        console.error(error);
+                        toast({
+                          title: "Error",
+                          description: error.message
+                        });
+                      }
+                    }}
+                  >
+                    <CameraIcon />
+                  </Button>
+                </TooltipTrigger>
 
-                  <TooltipContent>
-                    { isSharingVideo ? "Close camera" : "Open camera" }
-                  </TooltipContent>
-                </Tooltip>
+                <TooltipContent>
+                  { isSharingVideo ? "Close camera" : "Open camera" }
+                </TooltipContent>
+              </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      className="rounded-full"
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    className="rounded-full"
 
-                      variant={ isSharingAudio ? "default" : "secondary" }
+                    variant={ isSharingAudio ? "default" : "secondary" }
 
-                      onClick={async () => {
-                        try {
-                          if (!isSharingAudio) {
-                            await openAudio();
-                          } else {
-                            await closeAudio();
-                          }
-                        } catch (error: any) {
-                          toast({
-                            title: "Error",
-                            description: error.message
-                          });
+                    onClick={async () => {
+                      try {
+                        if (!isSharingAudio) {
+                          await openAudio();
+                        } else {
+                          await closeAudio();
                         }
-                      }}
-                    >
-                      <SpeakerLoudIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    { isSharingAudio ? "Close speaker" : "Open speaker" }
-                  </TooltipContent>
-                </Tooltip>
+                      } catch (error: any) {
+                        toast({
+                          title: "Error",
+                          description: error.message
+                        });
+                      }
+                    }}
+                  >
+                    <SpeakerLoudIcon />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  { isSharingAudio ? "Close speaker" : "Open speaker" }
+                </TooltipContent>
+              </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      className="rounded-full"
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    className="rounded-full"
 
-                      variant={ isSharingScreenVideo ? "default" : "secondary" }
+                    variant={ isSharingScreenVideo ? "default" : "secondary" }
 
-                      onClick={async () => {
-                        try {
-                          if (!isSharingScreenVideo) {
-                            await openScreenVideo();
-                          } else {
-                            await closeScreenVideo();
-                          }
-                        } catch (error: any) {
-                          toast({
-                            title: "Error",
-                            description: error.message
-                          });
+                    onClick={async () => {
+                      try {
+                        if (!isSharingScreenVideo) {
+                          await openScreenVideo();
+                        } else {
+                          await closeScreenVideo();
                         }
-                      }}
-                    >
-                      <DesktopIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    { isSharingScreenVideo ? "Close screen" : "Open screen" }
-                  </TooltipContent>
-                </Tooltip>
-              </Card>
-            </PopoverContent>
-          </Popover>
-        </TooltipProvider>
+                      } catch (error: any) {
+                        toast({
+                          title: "Error",
+                          description: error.message
+                        });
+                      }
+                    }}
+                  >
+                    <DesktopIcon />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  { isSharingScreenVideo ? "Close screen" : "Open screen" }
+                </TooltipContent>
+              </Tooltip>
+            </Card>
+          </PopoverContent>
+        </Popover>
       </div>
-    </>
+    </TooltipProvider>
   )
 }
