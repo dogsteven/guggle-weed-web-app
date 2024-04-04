@@ -25,7 +25,7 @@ export default async function Home() {
             <br />
 
             <p>
-              The Broker maintains an in-memory hash map storing information about each meeting and its corresponding SFU's address. Of course, we can move that hash map to persistent storage to make the Broker stateless and scale out to multiple nodes to produce higher availability. We keep the map in memory for simplicity. The round-robin algorithm is applied to select an SFU for a new meeting.
+              The Broker maintains an in-memory hash map storing information about each meeting and its corresponding SFU&apos;s address. Of course, we can move that hash map to persistent storage to make the Broker stateless and scale out to multiple nodes to produce higher availability. We keep the map in memory for simplicity. The round-robin algorithm is applied to select an SFU for a new meeting.
             </p>
             <br />
 

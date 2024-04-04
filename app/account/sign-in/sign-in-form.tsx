@@ -86,7 +86,7 @@ export default function SignInForm({ returnUrl }: { returnUrl?: string }) {
             <FormButton>Sign in</FormButton>
 
             <div className="mt-4 text-center text-sm">
-              Haven't have an account yet? <Link href={ returnUrl ? `/account/sign-up?returnUrl=${returnUrl}` : "/account/sign-up"} className="underline">Sign up</Link>
+              Haven&apos;t have an account yet? <Link href={ returnUrl ? `/account/sign-up?returnUrl=${returnUrl}` : "/account/sign-up"} className="underline">Sign up</Link>
             </div>
           </div>
         </form>
