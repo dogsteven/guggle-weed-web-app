@@ -8,6 +8,7 @@ import VideoConference from "./video-conference";
 import { toast } from "@/components/ui/use-toast";
 import { useAppStore } from "./app-store-provider";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { useEffect } from "react";
 
 type MeetingRoomProps = {
   username: string,
@@ -27,7 +28,7 @@ export default function MeetingRoom({ username, hostId, meetingId }: MeetingRoom
   if (meetingStatus === "ended") {
     return (
       <>
-        This meeting has been ended.
+        This meeting has ended.
       </>
     );
   }
@@ -77,20 +78,22 @@ export default function MeetingRoom({ username, hostId, meetingId }: MeetingRoom
   }
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="flex flex-row gap-2">
-      <ResizablePanel>
-        <Card className="flex flex-col w-full h-full p-6 gap-2">
-          <VideoConference hostId={hostId} username={username} />
-        </Card>
-      </ResizablePanel>
+    <Card className="w-full h-full">
+      <ResizablePanelGroup direction="horizontal" className="flex flex-row gap-2">
+        <ResizablePanel>
+          <div className="flex flex-col w-full h-full p-6 gap-2">
+            <VideoConference hostId={hostId} username={username} />
+          </div>
+        </ResizablePanel>
 
-      <ResizableHandle className="z-0" />
+        <ResizableHandle className="z-0" />
 
-      <ResizablePanel maxSize={30} defaultSize={25} minSize={20}>
-        <Card className="flex flex-col h-full p-6">
-          <ChatBox />
-        </Card>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+        <ResizablePanel maxSize={25} defaultSize={25} minSize={20}>
+          <div className="flex flex-col h-full p-6">
+            <ChatBox />
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </Card>
   )
 }

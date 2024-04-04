@@ -22,7 +22,7 @@ type AppState = {
     chatMessages: ChatMessage[]
   }
 
-  attentionRequests: string[]
+  presentationRequests: string[]
 
   selfStream: {
     video: MediaStream | null
@@ -51,11 +51,11 @@ type AppAction = {
   sendChatMessage: () => void
   onChatMessageReceived: (chatMessage: ChatMessage) => void
 
-  requestAttention: () => void
-  onAttentionRequested: (attendeeId: string) => void
-  acceptAttention: (attendeeId: string) => void
-  rejectAttention: (attendeeId: string) => void
-  onAttentionAccepted: (attendeeId: string) => void
+  requestPresentation: () => void
+  onPresentationRequested: (attendeeId: string) => void
+  acceptPresentation: (attendeeId: string) => void
+  rejectPresentation: (attendeeId: string) => void
+  onPresentationAccepted: (attendeeId: string) => void
 
   joinMeeting: () => Promise<void>
   
@@ -85,7 +85,7 @@ export default function buildAppStore(client: GuggleWeedClient): StoreApi<AppSto
       chatMessages: []
     },
 
-    attentionRequests: [],
+    presentationRequests: [],
     
     selfStream: {
       video: null,
@@ -133,12 +133,12 @@ export default function buildAppStore(client: GuggleWeedClient): StoreApi<AppSto
       })
     })),
 
-    requestAttention: () => {
-      client.requestAttention();
+    requestPresentation: () => {
+      client.requestPresentation();
     },
 
-    onAttentionRequested: (attendeeId) => set((state) => ({
-      attentionRequests: produce(state.attentionRequests, (draft) => {
+    onPresentationRequested: (attendeeId) => set((state) => ({
+      presentationRequests: produce(state.presentationRequests, (draft) => {
         const index = draft.findIndex((username) => username === attendeeId);
 
         if (index === -1) {
@@ -150,11 +150,11 @@ export default function buildAppStore(client: GuggleWeedClient): StoreApi<AppSto
       })
     })),
 
-    acceptAttention: (attendeeId) => {
-      client.acceptAttention(attendeeId);
+    acceptPresentation: (attendeeId) => {
+      client.acceptPresentation(attendeeId);
       
       set((state) => ({
-        attentionRequests: produce(state.attentionRequests, (draft) => {
+        presentationRequests: produce(state.presentationRequests, (draft) => {
           const index = draft.findIndex((username) => username === attendeeId);
 
           if (index !== -1) {
@@ -164,9 +164,9 @@ export default function buildAppStore(client: GuggleWeedClient): StoreApi<AppSto
       }));
     },
 
-    rejectAttention: (attendeeId) => {
+    rejectPresentation: (attendeeId) => {
       set((state) => ({
-        attentionRequests: produce(state.attentionRequests, (draft) => {
+        presentationRequests: produce(state.presentationRequests, (draft) => {
           const index = draft.findIndex((username) => username === attendeeId);
 
           if (index !== -1) {
@@ -176,7 +176,7 @@ export default function buildAppStore(client: GuggleWeedClient): StoreApi<AppSto
       }));
     },
 
-    onAttentionAccepted: (attendeeId) => {
+    onPresentationAccepted: (attendeeId) => {
       let draft = Array.from(get().otherMedias);
 
       const medias = draft.filter(({ kind, username }) => kind === "video" && username === attendeeId);

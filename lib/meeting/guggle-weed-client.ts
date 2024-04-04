@@ -71,20 +71,20 @@ export default class GuggleWeedClient {
       }
     });
 
-    this.socket.on("attentionRequested", ({ attendeeId }) => {
+    this.socket.on("presentationRequested", ({ attendeeId }) => {
       if (store.getState().meetingStatus === "live") {
-        store.getState().onAttentionRequested(attendeeId);
+        store.getState().onPresentationRequested(attendeeId);
       }
     });
 
-    this.socket.on("attentionAccepted", ({ attendeeId }) => {
+    this.socket.on("presentationAccepted", ({ attendeeId }) => {
       if (store.getState().meetingStatus === "live") {
         toast({
           title: "Attention",
-          description: `Please pay your attention on ${attendeeId}`
+          description: `Please pay your attention on ${attendeeId}'s presentation`
         });
 
-        store.getState().onAttentionAccepted(attendeeId);
+        store.getState().onPresentationAccepted(attendeeId);
       }
     });
 
@@ -163,7 +163,7 @@ export default class GuggleWeedClient {
 
       "messageSent",
 
-      "attentionRequested", "attentionAccepted",
+      "presentationRequested", "presentationAccepted",
 
       "meetingEnded",
 
@@ -201,12 +201,16 @@ export default class GuggleWeedClient {
     this.socket.emit("sendMessage", { message });
   }
 
-  public requestAttention() {
-    this.socket.emit("requestAttention");
+  public requestPresentation() {
+    if (!this.producers.has("video") && !this.producers.has("screen-video")) {
+      throw new Error("Your don't have any video sharing to request for a presentation")
+    }
+
+    this.socket.emit("requestPresentation");
   }
 
-  public acceptAttention(attendeeId: string) {
-    this.socket.emit("acceptAttention", { attendeeId });
+  public acceptPresentation(attendeeId: string) {
+    this.socket.emit("acceptPresentation", { attendeeId });
   }
 
   public async join() {

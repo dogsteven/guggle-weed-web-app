@@ -45,11 +45,11 @@ function Audio({ stream }: { stream: MediaStream }) {
 export default function VideoConference({ hostId, username }: { hostId: string, username: string }) {
   const { video, screenVideo, isSharingVideo, isSharingAudio, isSharingScreenVideo } = useAppStore((state) => state.selfStream);
   const otherMedias = useAppStore((state) => state.otherMedias);
-  const attentionRequests = useAppStore((state) => state.attentionRequests);
+  const presentationRequests = useAppStore((state) => state.presentationRequests);
 
-  const requestAttention = useAppStore((state) => state.requestAttention);
-  const acceptAttention = useAppStore((state) => state.acceptAttention);
-  const rejectAttention = useAppStore((state) => state.rejectAttention);
+  const requestPresentation = useAppStore((state) => state.requestPresentation);
+  const acceptPresentation = useAppStore((state) => state.acceptPresentation);
+  const rejectPresentation = useAppStore((state) => state.rejectPresentation);
 
   const openVideo = useAppStore((state) => state.openVideo);
   const openAudio = useAppStore((state) => state.openAudio);
@@ -80,7 +80,7 @@ export default function VideoConference({ hostId, username }: { hostId: string, 
     return medias;
   }, [video, screenVideo]);
 
-  const [allowAttentionRequest, setAllowAttentionRequest] = useState(true);
+  const [allowPresentationRequest, setAllowPresentationRequest] = useState(true);
 
   return (
     <TooltipProvider>
@@ -99,26 +99,18 @@ export default function VideoConference({ hostId, username }: { hostId: string, 
           visibleVideos.map(({ id, username, stream }) => {
             return (
               <Card key={`video-${id}`} className="h-full w-full">
-                <div className="relative h-full w-full">
-                  <Video id={`remote-${id}`} key={`video-${id}`} stream={stream} className="absolute h-full w-full object-cover rounded-xl" />
+                <div className="relative h-full w-full bg-black rounded-xl">
+                  <Video id={`remote-${id}`} key={`video-${id}`} stream={stream} className="absolute h-full w-full object-contain rounded-xl" />
 
                   <div className="absolute h-full w-full flex flex-row justify-between items-end p-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button size="icon" className="rounded-full">
-                          {username.charAt(0).toUpperCase()}
-                        </Button>
-                      </TooltipTrigger>
-
-                      <TooltipContent>
-                        {username}
-                      </TooltipContent>
-                    </Tooltip>
+                    <Button size="icon" className="rounded-full">
+                      {username.charAt(0).toUpperCase()}
+                    </Button>
 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="ghost" size="icon" className="rounded-full"
+                          variant="secondary" size="icon" className="rounded-full"
                           onClick={() => {
                             const videoElement = document.getElementById(`remote-${id}`) as HTMLVideoElement;
 
@@ -155,8 +147,8 @@ export default function VideoConference({ hostId, username }: { hostId: string, 
                   <ReaderIcon />
 
                   {
-                    (attentionRequests.length > 0) && (
-                      <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs leading-none text-red-100 transform translate-x-1/3 -translate-y-1/3 bg-red-600 rounded-full">{ attentionRequests.length }</span>
+                    (presentationRequests.length > 0) && (
+                      <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs leading-none text-red-100 transform translate-x-1/3 -translate-y-1/3 bg-red-600 rounded-full">{ presentationRequests.length }</span>
                     )
                   }
                 </Button>
@@ -164,12 +156,12 @@ export default function VideoConference({ hostId, username }: { hostId: string, 
 
               <SheetContent className="overflow-y-scroll">
                 <SheetHeader>
-                  <SheetTitle>Attention requests</SheetTitle>
+                  <SheetTitle>Presentation requests</SheetTitle>
                 </SheetHeader>
 
                 <div className="flex flex-col w-full gap-2 mt-6">
                   {
-                    attentionRequests.map((attendeeId) => {
+                    presentationRequests.map((attendeeId) => {
                       return (
                         <ContextMenu key={attendeeId}>
                           <ContextMenuTrigger>
@@ -177,14 +169,14 @@ export default function VideoConference({ hostId, username }: { hostId: string, 
                               <RocketIcon className="h-4 w-4" />
                               <AlertTitle>Request</AlertTitle>
                               <AlertDescription>
-                                {attendeeId} has request for an attention
+                                {attendeeId} has request for a presentation
                               </AlertDescription>
                             </Alert>
                           </ContextMenuTrigger>
 
                           <ContextMenuContent>
-                            <ContextMenuItem onClick={() => acceptAttention(attendeeId)}>Accept</ContextMenuItem>
-                            <ContextMenuItem onClick={() => rejectAttention(attendeeId)}>Reject</ContextMenuItem>
+                            <ContextMenuItem onClick={() => acceptPresentation(attendeeId)}>Accept</ContextMenuItem>
+                            <ContextMenuItem onClick={() => rejectPresentation(attendeeId)}>Reject</ContextMenuItem>
                           </ContextMenuContent>
                         </ContextMenu>
                       );
@@ -200,16 +192,23 @@ export default function VideoConference({ hostId, username }: { hostId: string, 
           size="icon"
           className="rounded-full"
           
-          disabled={!allowAttentionRequest}
+          disabled={!allowPresentationRequest}
 
           onClick={() => {
-            if (allowAttentionRequest) {
-              requestAttention();
+            if (allowPresentationRequest) {
+              try {
+                requestPresentation();
 
-              setAllowAttentionRequest(false);
-              setTimeout(() => {
-                setAllowAttentionRequest(true);
-              }, 5000);
+                setAllowPresentationRequest(false);
+                setTimeout(() => {
+                  setAllowPresentationRequest(true);
+                }, 5000);
+              } catch (error: any) {
+                toast({
+                  title: "Error",
+                  description: error.message
+                });
+              }
             }
           }}
         >
