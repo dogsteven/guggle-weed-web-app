@@ -14,7 +14,7 @@ export default async function Home() {
             <ol className="list-decimal list-inside">
               <li>The <b>SFUs</b> (Selective Forwarding Units) manage the logic of meetings and their attendees in the media plane.</li>
               <li>The <b>Broker</b> works similarly to a reversed proxy: it selectively picks an SFU for instantiating a meeting and forwards each command to the appropriate SFU.</li>
-              <li>The <b>Socket Handler</b> handles the connections of attendees in each meeting. It also acts as an instant messaging service that notifies attendees about events that have taken place.</li>
+              <li>The <b>Socket Handler</b> handles the connections of attendees in each meeting. It acts as an instant messaging service that notifies attendees about events that have taken place.</li>
               <li>The <b>Web Application</b> is an interactive web application that users use to start and join video conferences.</li>
             </ol>
             <br />
@@ -30,8 +30,7 @@ export default async function Home() {
             <br />
 
             <p>
-              We use <a href="https://nextjs.org/" className="underline">Next.js</a> for the Web Application and <a href="https://socket.io/" className="underline">socket.io</a> for the Socket Handler. Because the application logic other than the media itself is relatively small, we decided to put all the application logic into the Socket Handler.
-              For complex scenarios, we suggest separating the application logic into another server.
+              We use <a href="https://nextjs.org/" className="underline">Next.js</a> for the Web Application and <a href="https://socket.io/" className="underline">socket.io</a> for the Socket Handler. Because the there are a few business rules, we decided to put it into the Socket Handler. In general, we suggest separating the business logic from the Socket Handler.
             </p>
             <br />
 
@@ -42,13 +41,15 @@ export default async function Home() {
 
             <p>
               The system can be horizontally scalable in the following ways:
-              <ol className="list-decimal list-inside">
-                <li>Move the in-memory map to a remote storage service to make the Broker stateless.</li>
-                <li>Adapt Redis backplane to the Socket Handler.</li>
-                <li>The Next.js Web Application is naturally horizontally scalable.</li>
-              </ol>
             </p>
+
+            <ol className="list-decimal list-inside">
+              <li>Move the in-memory map to a remote storage service to make the Broker stateless.</li>
+              <li>Adapt Redis backplane to the Socket Handler.</li>
+              <li>The Next.js Web Application is naturally horizontally scalable.</li>
+            </ol>
           </div>
+          
           <div>
             <Image alt="Overall system architecture" src={SystemArchirecture} priority={false} />
           </div>
